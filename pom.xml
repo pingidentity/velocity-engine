@@ -33,7 +33,7 @@
 
   <groupId>org.apache.velocity</groupId>
   <artifactId>velocity</artifactId>
-  <version>1.6.4</version>
+  <version>1.6.4-p1</version>
 
   <name>Apache Velocity</name>
   <url>http://velocity.apache.org/engine/releases/velocity-1.6.2/</url>
@@ -57,6 +57,14 @@
           <inputEncoding>UTF-8</inputEncoding>
           <outputEncoding>UTF-8</outputEncoding>
           <xdocDirectory>${basedir}/xdocs/docs</xdocDirectory>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>8</source>
+          <target>8</target>
         </configuration>
       </plugin>
     </plugins>
