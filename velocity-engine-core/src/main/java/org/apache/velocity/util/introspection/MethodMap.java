@@ -1,5 +1,7 @@
 package org.apache.velocity.util.introspection;
 
+import org.apache.commons.lang3.reflect.MethodUtils;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,6 +24,7 @@ package org.apache.velocity.util.introspection;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +57,8 @@ public class MethodMap
     private static final int EXPLICITLY_CONVERTIBLE = 1;
     private static final int IMPLCITLY_CONVERTIBLE = 2;
     private static final int STRICTLY_CONVERTIBLE = 3;
+
+    private static final Method TRY_SET_ACCESSIBLE = MethodUtils.getMethodObject(Method.class, "trySetAccessible");
 
     TypeConversionHandler conversionHandler;
 
@@ -315,9 +320,121 @@ public class MethodMap
         switch (bestMatches.size())
         {
             case 0: return null;
-            case 1: return bestMatches.get(0).method;
+            case 1: return getAccessibleMethodDeclaration(bestMatches.get(0).method);
             default: throw new AmbiguousException();
         }
+    }
+
+    /**
+     * Once we identified a best match of a specific call, walk up the chain of inheritance to find the first method
+     * which we are allowed to call through reflection. This is needed to avoid IllegalAccessException, when a public
+     * API method is implemented by a class which is not exported.
+     * 
+     * @param method
+     * @return
+     */
+    public static Method getAccessibleMethodDeclaration(Method method)
+    {
+        // We cannot go deeper in the hierarchy for static methods as it's completely different methods
+        // We don't need to go deeper in the hierarchy if the method is accessible (can be called) already
+        if (Modifier.isStatic(method.getModifiers()) || canAccess(method)) {
+            return method;
+        }
+
+        Class<?> clazz = method.getDeclaringClass();
+        String name = method.getName();
+        Class<?>[] arguments = method.getParameterTypes();
+
+        while (clazz != null)
+        {
+            Class<?> superClass = null;
+            Method superMethod = null;
+
+            // check the super class
+            superClass = clazz.getSuperclass();
+            if (superClass != null)
+            {
+                try
+                {
+                    superMethod = superClass.getDeclaredMethod(name, arguments);
+                    if (!canAccess(superMethod)) {
+                        superMethod = null;
+                    }
+                }
+                catch (NoSuchMethodException nsme)
+                {
+                }
+            }
+
+            if (superMethod == null)
+            {
+                // check among the interfaces
+                Class<?>[] interfaces = clazz.getInterfaces();
+                for (Class<?>  intf : interfaces)
+                {
+                    try
+                    {
+                        superMethod = intf.getDeclaredMethod(name, arguments);
+                        if (superMethod != null)
+                        {
+                            superClass = intf;
+                            break;
+                        }
+                    }
+                    catch (NoSuchMethodException nsme)
+                    {
+                    }
+                }
+            }
+
+            if (superMethod != null)
+            {
+                method = superMethod;
+            }
+            clazz = superClass;
+        }
+
+        return method;
+    }
+
+    private static boolean canAccess(Method method)
+    {
+        // Check if the method is public
+        if (Modifier.isPublic(method.getModifiers())) {
+            if (method.isAccessible()) {
+                // The method accessible flag was already set to true so we assume we can call it
+                return true;
+            } else {
+                // Check if we are able to change the accessible flag
+                if (trySetAccessible(method)) {
+                    // Restore the accessible flag to its former value
+                    method.setAccessible(false);
+
+                    // We were able to modify the accessible flag, so we should be able to call the method
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean trySetAccessible(Method method)
+    {
+        boolean accessible = false;
+        try {
+            if (TRY_SET_ACCESSIBLE != null) {
+                // Use Method#trySetAccessible() in Java 9+
+                accessible = ((Boolean) TRY_SET_ACCESSIBLE.invoke(method)).booleanValue();
+            } else {
+                // Use Method#setAccessible(true) in Java 8
+                method.setAccessible(true);
+            }
+        } catch (Exception e) {
+            // Failed to set the accessible flag of the method, assume it means it's not possible to invoke it
+        }
+
+        return accessible;
     }
 
     /**

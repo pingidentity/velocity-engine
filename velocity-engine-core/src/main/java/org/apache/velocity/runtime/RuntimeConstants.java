@@ -65,7 +65,7 @@ public interface RuntimeConstants extends DeprecatedRuntimeConstants
      *  @since 2.2
      */
     String RUNTIME_LOG_TRACK_LOCATION = "runtime.log.track_location";
-    
+
     /*
      * ----------------------------------------------------------------------
      * D I R E C T I V E  C O N F I G U R A T I O N
@@ -90,7 +90,7 @@ public interface RuntimeConstants extends DeprecatedRuntimeConstants
      * @since 2.0
      */
     String CHECK_EMPTY_OBJECTS = "directive.if.empty_check";
-    
+
     /**
      * Starting tag for error messages triggered by passing a parameter not allowed in the #include directive. Only string literals,
      * and references are allowed.
@@ -220,7 +220,13 @@ public interface RuntimeConstants extends DeprecatedRuntimeConstants
     /**
      * Datasource loader datasource url
      */
-    String DS_RESOURCE_LOADER_DATASOURCE = "resource.loader.ds.resource.datasource_url";
+    String DS_RESOURCE_LOADER_DATASOURCE_URL = "resource.loader.ds.resource.datasource_url";
+
+    /**
+     * @deprecated Use {@link #DS_RESOURCE_LOADER_DATASOURCE_URL} instead.
+     */
+    @Deprecated
+    String DS_RESOURCE_LOADER_DATASOURCE = DS_RESOURCE_LOADER_DATASOURCE_URL;
 
     /**
      * Datasource loader templates table
@@ -241,6 +247,11 @@ public interface RuntimeConstants extends DeprecatedRuntimeConstants
      * Datasource loader template timestamp column
      */
     String DS_RESOURCE_LOADER_TIMESTAMP_COLUMN = "resource.loader.ds.resource.timestamp_column";
+
+    /**
+     * Datasource loader statements pool max size
+     */
+    String DS_RESOURCE_LOADER_STMT_POOL_MAX_SIZE = "resource.loader.ds.statements_pool_max_size";
 
     /** The default character encoding for the templates. Used by the parser in processing the input streams. */
     String INPUT_ENCODING = "resource.default_encoding";
@@ -446,9 +457,12 @@ public interface RuntimeConstants extends DeprecatedRuntimeConstants
 
     /** Whether to use string interning. */
     String RUNTIME_STRING_INTERNING = "runtime.string_interning";
-    
+
     /** Switch for the interpolation facility for string literals. */
     String INTERPOLATE_STRINGLITERALS = "runtime.interpolate_string_literals";
+
+    /** Switch for the immutability of integer ranges. */
+    String IMMUTABLE_RANGES = "runtime.immutable_ranges";
 
     /** Switch for ignoring nulls in math equations vs throwing exceptions. */
     String STRICT_MATH = "runtime.strict_math";

@@ -234,12 +234,12 @@ public class ${parser.basename}Parser implements Parser
      * the new stream that we want parsed.
      */
     @Override
-    public SimpleNode parse( Reader reader, Template template )
+    public SimpleNode parse( Reader reader, Template t )
         throws ParseException
     {
         SimpleNode sn = null;
 
-        currentTemplate = template;
+        currentTemplate = t;
 
         try
         {
@@ -267,7 +267,7 @@ public class ${parser.basename}Parser implements Parser
              *  thrown by the Macro class when something is amiss in the
              *  Macro specification
              */
-            log.error("{}: {}", template.getName(), mee.getMessage(), mee);
+            log.error("{}: {}", t.getName(), mee.getMessage(), mee);
             throw mee;
         }
         catch (ParseException pe)
@@ -282,7 +282,7 @@ public class ${parser.basename}Parser implements Parser
         }
         catch (Exception e)
         {
-            String msg = template.getName() + ": " + e.getMessage();
+            String msg = t.getName() + ": " + e.getMessage();
             log.error(msg, e);
             throw new VelocityException(msg, e, getRuntimeServices().getLogContext().getStackTrace());
         }
@@ -572,7 +572,7 @@ TOKEN_MGR_DECLS:
     {
         ${parser.basename}Parser.trace(message);
     }
-    
+
     /**
      * Switches to a new state (add some log to the default method)
      */
@@ -755,8 +755,8 @@ TOKEN :
     }
 }
 
-/* In all other states, keep the zero-width whitespace for now */
-<REFERENCE,REFMODIFIER,OLD_REFMODIFIER,REFMOD3,REFINDEX,DIRECTIVE,REFMOD2,DEFAULT,REFMOD,IN_TEXTBLOCK,IN_MULTILINE_COMMENT,IN_FORMAL_COMMENT,IN_SINGLE_LINE_COMMENT>
+/* In all other states except IN_TEXTBLOCK, keep the zero-width whitespace for now */
+<REFERENCE,REFMODIFIER,OLD_REFMODIFIER,REFMOD3,REFINDEX,DIRECTIVE,REFMOD2,DEFAULT,REFMOD,IN_MULTILINE_COMMENT,IN_FORMAL_COMMENT,IN_SINGLE_LINE_COMMENT>
 TOKEN :
 {
     <ZERO_WIDTH_WHITESPACE: "\u001C">
@@ -1082,6 +1082,11 @@ MORE :
             /* do not push PRE states */
             if (curLexState != PRE_REFERENCE && curLexState != PRE_DIRECTIVE && curLexState != PRE_OLD_REFERENCE)
             {
+                /* The hash can never come back to REFMOD3 */
+                if (curLexState == REFMOD3)
+                {
+                  switchTo(DEFAULT);
+                }
                 stateStackPush();
             }
             switchTo(PRE_DIRECTIVE);
@@ -1386,7 +1391,7 @@ TOKEN:
  *  REFERENCE Lexical States
  *
  *  This is more than a single state, because of the  structure of
- *  the VTL references.  We use three states because the set of tokens
+ *  the VTL references.  We use several states because the set of tokens
  *  for each state can be different.
  *
  *  $foo.bar( "arg" )
@@ -1541,7 +1546,7 @@ TOKEN :
  * the template has been turned into an AST,
  * this method returns the root of AST which
  * can subsequently be traversed by a visitor
- * which implements the ParserVisitor interface
+ * which implements the StandardParserVisitor interface
  * which is generated automatically by JavaCC
  */
 SimpleNode process() :
@@ -1714,47 +1719,47 @@ int DirectiveArg() #void : {}
 {
     Reference()
     {
-        return ParserTreeConstants.JJTREFERENCE;
+        return StandardParserTreeConstants.JJTREFERENCE;
     }
 |   Word()
     {
-        return ParserTreeConstants.JJTWORD;
+        return StandardParserTreeConstants.JJTWORD;
     }
 |   StringLiteral()
     {
-        return ParserTreeConstants.JJTSTRINGLITERAL;
+        return StandardParserTreeConstants.JJTSTRINGLITERAL;
     }
 
 |   IntegerLiteral()
     {
-        return ParserTreeConstants.JJTINTEGERLITERAL;
+        return StandardParserTreeConstants.JJTINTEGERLITERAL;
     }
     /*
      * Need to put this before the floating point expansion
      */
 |   LOOKAHEAD(  <LBRACKET> (<WHITESPACE> | <NEWLINE>)* ( Reference() | IntegerLiteral())     (<WHITESPACE> | <NEWLINE>)* <DOUBLEDOT> ) IntegerRange()
     {
-        return ParserTreeConstants.JJTINTEGERRANGE;
+        return StandardParserTreeConstants.JJTINTEGERRANGE;
     }
 |   FloatingPointLiteral()
     {
-        return ParserTreeConstants.JJTFLOATINGPOINTLITERAL;
+        return StandardParserTreeConstants.JJTFLOATINGPOINTLITERAL;
     }
 |   Map()
     {
-        return ParserTreeConstants.JJTMAP;
+        return StandardParserTreeConstants.JJTMAP;
     }
 |   ObjectArray()
     {
-        return ParserTreeConstants.JJTOBJECTARRAY;
+        return StandardParserTreeConstants.JJTOBJECTARRAY;
     }
 |   True()
     {
-        return ParserTreeConstants.JJTTRUE;
+        return StandardParserTreeConstants.JJTTRUE;
     }
 |   False()
     {
-        return ParserTreeConstants.JJTFALSE;
+        return StandardParserTreeConstants.JJTFALSE;
     }
 }
 
@@ -1878,7 +1883,7 @@ boolean Directive(boolean afterNewline) :
               LOOKAHEAD( { isMacro && isAssignment() })
               DirectiveAssign() (<WHITESPACE> | <NEWLINE>)* <EQUALS> ( <WHITESPACE> | <NEWLINE> )*
               {
-                  argtypes.add(ParserTreeConstants.JJTDIRECTIVEASSIGN);
+                  argtypes.add(StandardParserTreeConstants.JJTDIRECTIVEASSIGN);
               }
             ]
             LOOKAHEAD( { !isRightParenthesis() } )
@@ -1886,7 +1891,7 @@ boolean Directive(boolean afterNewline) :
               argType = DirectiveArg()
               {
                   argtypes.add(argType);
-                  if (d == null && argType == ParserTreeConstants.JJTWORD)
+                  if (d == null && argType == StandardParserTreeConstants.JJTWORD)
                   {
                       if (isVM)
                       {

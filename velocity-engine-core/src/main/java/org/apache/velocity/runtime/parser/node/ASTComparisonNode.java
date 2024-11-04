@@ -55,10 +55,10 @@ public abstract class ASTComparisonNode extends ASTBinaryOperator
 
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.StandardParserVisitor, java.lang.Object)
      */
     @Override
-    public Object jjtAccept(ParserVisitor visitor, Object data)
+    public Object jjtAccept(StandardParserVisitor visitor, Object data)
     {
         return visitor.visit(this, data);
     }
@@ -76,7 +76,10 @@ public abstract class ASTComparisonNode extends ASTBinaryOperator
         {
             return compareNull(left, right);
         }
-        Boolean result = compareNumbers(left, right);
+        Boolean result = null;
+        if (!(left instanceof String) || !(right instanceof String)) {
+            result = compareNumbers(left, right);
+        }
         if (result == null)
         {
             result = compareNonNumber(left, right);

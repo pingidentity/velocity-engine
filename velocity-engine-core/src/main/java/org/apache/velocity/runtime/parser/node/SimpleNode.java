@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 /**
  *
  */
-public class SimpleNode implements Node
+public class SimpleNode implements Node, Cloneable
 {
     /** */
     protected RuntimeServices rsvc = null;
@@ -232,20 +232,20 @@ public class SimpleNode implements Node
 
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.Node#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
+     * @see org.apache.velocity.runtime.parser.node.Node#jjtAccept(org.apache.velocity.runtime.parser.node.StandardParserVisitor, java.lang.Object)
      */
     @Override
-    public Object jjtAccept(ParserVisitor visitor, Object data)
+    public Object jjtAccept(StandardParserVisitor visitor, Object data)
     {
         return visitor.visit(this, data);
     }
 
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.Node#childrenAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
+     * @see org.apache.velocity.runtime.parser.node.Node#childrenAccept(org.apache.velocity.runtime.parser.node.StandardParserVisitor, java.lang.Object)
      */
     @Override
-    public Object childrenAccept(ParserVisitor visitor, Object data)
+    public Object childrenAccept(StandardParserVisitor visitor, Object data)
     {
         if (children != null)
         {
@@ -311,7 +311,7 @@ public class SimpleNode implements Node
         dump(prefix, pw);
         pw.flush();
     }
-    
+
     /**
      * <p>Dumps nodes tree on System.out.</p>
      * <p>Override this method if you want to customize how the node dumps
@@ -607,5 +607,44 @@ public class SimpleNode implements Node
     public Parser getParser()
     {
         return parser;
+    }
+
+    /**
+     * Root node deep cloning
+     * @param template owner template
+     * @return cloned node
+     * @throws CloneNotSupportedException
+     * @since 2.4
+     */
+    public Node clone(Template template) throws CloneNotSupportedException
+    {
+        if (parent != null) {
+            throw new IllegalStateException("cannot clone a child node without knowing its parent");
+        }
+        return clone(template, null);
+    }
+
+    /**
+     * Child node deep cloning
+     * @param template owner template
+     * @param parent parent node
+     * @return cloned node
+     * @throws CloneNotSupportedException
+     * @since 2.4
+     */
+    protected Node clone(Template template, Node parent) throws CloneNotSupportedException
+    {
+        SimpleNode clone = (SimpleNode)super.clone();
+        clone.template = template;
+        clone.parent = parent;
+        if (children != null)
+        {
+            clone.children = new SimpleNode[children.length];
+            for (int i = 0; i < children.length; ++i)
+            {
+                clone.children[i] = ((SimpleNode)children[i]).clone(template, clone);
+            }
+        }
+        return clone;
     }
 }

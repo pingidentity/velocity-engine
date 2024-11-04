@@ -22,12 +22,15 @@ package org.apache.velocity.runtime.parser.node;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.DuckType;
 import org.apache.velocity.util.StringUtils;
 
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 
 /**
@@ -58,10 +61,10 @@ public class ASTIntegerRange extends SimpleNode
     }
 
     /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.StandardParserVisitor, java.lang.Object)
      */
     @Override
-    public Object jjtAccept(ParserVisitor visitor, Object data)
+    public Object jjtAccept(StandardParserVisitor visitor, Object data)
     {
         return visitor.visit(this, data);
     }
@@ -275,10 +278,31 @@ public class ASTIntegerRange extends SimpleNode
         int delta = ( l >= r ) ? -1 : 1;
 
         /*
-         * Return the corresponding integer range
+         * Build the corresponding integer range
          */
 
-        return new IntegerRange(l, r, delta);
+        IntegerRange range = new IntegerRange(l, r, delta);
+
+        /*
+         * Returns the range, or a concrete list if mutable ranges are requested by the configuration
+         */
+
+        boolean immutable = rsvc.getBoolean(RuntimeConstants.IMMUTABLE_RANGES, true);
+        if (immutable)
+        {
+            return range;
+        }
+        else
+        {
+            // backward compatible behavior: the list is instanciated in memory
+            int n = Math.abs(r - l) + 1;
+            List mutableRange = new ArrayList<>(n);
+            for (Iterator<Integer> it = range.iterator(); it.hasNext();)
+            {
+                mutableRange.add(it.next());
+            }
+            return mutableRange;
+        }
     }
 
     /**

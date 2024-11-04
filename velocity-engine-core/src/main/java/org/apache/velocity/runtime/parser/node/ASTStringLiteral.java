@@ -205,9 +205,9 @@ public class ASTStringLiteral extends SimpleNode
     /**
      * Replaces double double-quotes with a single double quote ("" to ").
      * Replaces double single quotes with a single quote ('' to ').
-	 *
-	 * @param s StringLiteral without the surrounding quotes
-	 * @param literalQuoteChar char that starts the StringLiteral (" or ')
+     *
+     * @param s StringLiteral without the surrounding quotes
+     * @param literalQuoteChar char that starts the StringLiteral (" or ')
      */
     private String replaceQuotes(String s, char literalQuoteChar)
     {
@@ -226,11 +226,11 @@ public class ASTStringLiteral extends SimpleNode
             if( i + 1 < is )
             {
                 char next =  s.charAt(i + 1);
-				// '""' -> "", "''" -> ''
-				// thus it is not necessary to double quotes if the "surrounding" quotes
-				// of the StringLiteral are different. See VELOCITY-785
+    			// '""' -> "", "''" -> ''
+    			// thus it is not necessary to double quotes if the "surrounding" quotes
+    			// of the StringLiteral are different. See VELOCITY-785
                 if( (literalQuoteChar == '"' && (next == '"' && c == '"')) ||
-				    (literalQuoteChar == '\'' && (next == '\'' && c == '\'')) )
+    			    (literalQuoteChar == '\'' && (next == '\'' && c == '\'')) )
                 {
                     i++;
                 }
@@ -278,11 +278,11 @@ public class ASTStringLiteral extends SimpleNode
      * @param visitor
      * @param data
      * @return rendered object
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor,
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.StandardParserVisitor,
      *      java.lang.Object)
      */
     @Override
-    public Object jjtAccept(ParserVisitor visitor, Object data)
+    public Object jjtAccept(StandardParserVisitor visitor, Object data)
     {
         return visitor.visit(this, data);
     }

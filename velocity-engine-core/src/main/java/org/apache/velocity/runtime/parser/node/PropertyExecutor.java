@@ -119,6 +119,16 @@ public class PropertyExecutor extends AbstractExecutor
 
                 setMethod(introspector.getMethod(clazz, sb.toString(), params));
             }
+
+            if (!isAlive())
+            {
+                /*
+                 * If no JavaBean property was found, try the convention used by Java 16 records.
+                 * No convenience case flip because the more convenient lowerCamelCase is also the
+                 * more likely to be used in the record itself.
+                 */
+                setMethod(introspector.getMethod(clazz, property, params));
+            }
         }
         /*
          * pass through application level runtime exceptions
@@ -129,7 +139,7 @@ public class PropertyExecutor extends AbstractExecutor
         }
         catch(Exception e)
         {
-            String msg = "Exception while looking for property getter for '" + property;
+            String msg = "Exception while looking for property getter for '" + property + "'";
             log.error(msg, e);
             throw new VelocityException(msg, e);
         }

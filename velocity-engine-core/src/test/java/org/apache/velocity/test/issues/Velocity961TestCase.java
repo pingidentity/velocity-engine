@@ -1,4 +1,4 @@
-package org.apache.velocity.runtime.parser.node;
+package org.apache.velocity.test.issues;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +19,29 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.
  */
 
-public interface ParserTreeConstants extends StandardParserTreeConstants
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.test.BaseTestCase;
+
+/**
+ * This class tests the fix for VELOCITY-961.
+ */
+public class Velocity961TestCase extends BaseTestCase
 {
+    public Velocity961TestCase(String name)
+    {
+       super(name);
+    }
+
+    public void test1()
+    {
+        String template = "$child.typeName()#if($child.isRepeated())[]#end";
+        assertEvalEquals("$child.typeName()", template);
+    }
+
+    public void test2()
+    {
+        String template = "$child.typeName()#if(1)[]#end";
+        assertEvalEquals("$child.typeName()[]", template);
+    }
 }

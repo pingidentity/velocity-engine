@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.velocity</groupId>
         <artifactId>velocity-engine-parent</artifactId>
-        <version>2.4-SNAPSHOT</version>
+        <version>2.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>velocity-engine-core</artifactId>
@@ -41,7 +41,7 @@
         <parser.char.at>@</parser.char.at>
         <parser.char.dollar>$</parser.char.dollar>
         <parser.char.hash>#</parser.char.hash>
-        
+
         <!-- You can modify those properties locally to test
              the DataSourceResourceLoader against other engines.
              Please note that you may have to also alter the file
@@ -49,7 +49,8 @@
         -->
         <test.jdbc.driver.groupId>org.hsqldb</test.jdbc.driver.groupId>
         <test.jdbc.driver.artifactId>hsqldb</test.jdbc.driver.artifactId>
-        <test.jdbc.driver.version>2.5.1</test.jdbc.driver.version>
+        <test.jdbc.driver.version>2.7.3</test.jdbc.driver.version>
+        <test.jdbc.driver.classifier>jdk8</test.jdbc.driver.classifier>
         <test.jdbc.driver.className>org.hsqldb.jdbcDriver</test.jdbc.driver.className>
         <test.jdbc.uri>jdbc:hsqldb:.</test.jdbc.uri>
         <test.jdbc.login>sa</test.jdbc.login>
@@ -58,10 +59,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -107,44 +104,10 @@
                 </executions>
             </plugin>
 
-            <!-- shading of commons-io -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
-                <executions>
-                    <execution>
-                        <id>shade</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>commons-io:commons-io</include>
-                                </includes>
-                                <excludes>
-                                    <exclude>org.slf4j:slf4j-api</exclude>
-                                </excludes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.apache.commons.io</pattern>
-                                    <shadedPattern>org.apache.velocity.shaded.commons.io</shadedPattern>
-                                </relocation>
-                            </relocations>
-                            <minimizeJar>true</minimizeJar>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- parser -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
-                <version>2.6</version>
                 <configuration>
                     <isStatic>false</isStatic>
                     <buildParser>true</buildParser>
@@ -153,7 +116,6 @@
                     <debugParser>${parser.debug}</debugParser>
                     <debugLookAhead>${parser.debug}</debugLookAhead>
                     <debugTokenManager>${parser.debug}</debugTokenManager>
-                    <jdkVersion>${maven.compiler.target}</jdkVersion>
                     <nodeUsesParser>true</nodeUsesParser>
                     <nodePackage>org.apache.velocity.runtime.parser.node</nodePackage>
                     <sourceDirectory>${project.build.directory}/parser</sourceDirectory>
@@ -173,31 +135,8 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>            
-
-            <!-- post-processing of parser genereted source files -->
-            <plugin>
-                <groupId>com.google.code.maven-replacer-plugin</groupId>
-                <artifactId>replacer</artifactId>
-                <executions>
-                    <execution>
-                        <id>patch-parser-files</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>replace</goal>
-                        </goals>
-                        <configuration>
-                            <file>${project.build.directory}/generated-sources/javacc/org/apache/velocity/runtime/parser/TokenMgrError.java</file>
-                            <replacements>
-                                <replacement>
-                                    <token>static final int</token>
-                                    <value>public static final int</value>
-                                </replacement>
-                            </replacements>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
+
 
             <!-- handle VelocityEngineVersion file -->
             <plugin>
@@ -224,7 +163,6 @@
                             org.apache.velocity.*
                         </Export-Package>
                         <Import-Package>
-                            !org.apache.commons.io,
                             *
                         </Import-Package>
                     </instructions>
@@ -235,9 +173,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire.plugin.version}</version>
                 <configuration>
-                    <skip>${maven.test.skip}</skip>
                     <systemProperties>
                         <property>
                             <name>test</name>
@@ -290,7 +226,6 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 
@@ -298,17 +233,15 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.11</version>
+            <version>3.17.0</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -316,16 +249,11 @@
             <artifactId>${test.jdbc.driver.artifactId}</artifactId>
             <version>${test.jdbc.driver.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.8.0</version>
+            <classifier>${test.jdbc.driver.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -333,15 +261,15 @@
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.5</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.8.6.2</version>
                 <configuration>
                     <xmlOutput>true</xmlOutput>
                     <threshold>Low</threshold>
                     <effort>Max</effort>
-                    <excludeFilterFile>src/etc/build/findbugs-exclude.xml</excludeFilterFile>
-                    <xmlOutputDirectory>target/site</xmlOutputDirectory>
+                    <excludeFilterFile>src/etc/build/spotbugs-exclude.xml</excludeFilterFile>
+                    <xmlOutputDirectory>${project.reporting.outputDirectory}</xmlOutputDirectory>
                 </configuration>
             </plugin>
         </plugins>
